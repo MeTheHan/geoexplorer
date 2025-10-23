@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoExplorer 2025 - Dünya Coğrafya Oyunu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #a5b4fc;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 3.2em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: white;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 25px;
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Street View Container */
+        .street-view-container {
+            background: var(--surface);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        #streetView {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+            background: linear-gradient(45deg, #1e293b, #334155);
+            position: relative;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 41, 59, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 10;
+        }
+
+        .loading-content {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            display: flex;
+            gap: 12px;
+            z-index: 5;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 12px;
+            width: 56px;
+            height: 56px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px);
+            background: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Game Panel */
+        .game-panel {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .round-info {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            border-radius: 15px;
+            color: white;
+        }
+
+        .round-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .score-display {
+            font-size: 2.4em;
+            font-weight: 800;
+            text-align: center;
+            color: var(--success);
+            margin: 10px 0;
+        }
+
+        .map-container {
+            flex: 1;
+            background: var(--background);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--border);
+        }
+
+        #guessMap {
+            width: 100%;
+            height: 300px;
+            border-radius: 13px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--background);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Results */
+        .results-container {
+            background: var(--background);
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+        }
+
+        .distance-score {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .location-details {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Settings */
+        .settings-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 12px;
+            width: 50px;
+            height: 50px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            z-index: 5;
+        }
+
+        .settings-btn:hover {
+            transform: rotate(45deg);
+            background: white;
+        }
+
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .settings-content {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .settings-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 5px;
+        }
+
+        .setting-group {
+            margin-bottom: 25px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .select-input, .number-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: var(--surface);
+        }
+
+        .select-input:focus, .number-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+
+        /* Game Stats */
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: var(--background);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        /* Timer */
+        .timer {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1em;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+            
+            .game-container {
+                gap: 15px;
+            }
+            
+            .controls {
+                bottom: 15px;
+                left: 15px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-globe-americas"></i> GeoExplorer 2025</h1>
+            <p>Dünyayı Keşfet, Konumları Tahmin Et, Coğrafyanı Geliştir!</p>
+        </div>
+        
+        <div class="game-container">
+            <!-- Street View Section -->
+            <div class="street-view-container">
+                <button class="settings-btn" onclick="openSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+                
+                <div class="timer" id="timer">02:00</div>
+                
+                <div id="streetView">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-content">
+                            <div class="loading-spinner"></div>
+                            <h3>Dünya Haritası Yükleniyor</h3>
+                            <p>Rastgele bir konum seçiliyor...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="moveForward()">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="control-btn" onclick="moveBackward()">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <button class="control-btn" onclick="rotateLeft()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="control-btn" onclick="rotateRight()">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Game Panel -->
+            <div class="game-panel">
+                <div class="round-info">
+                    <div class="round-number">RAUNT <span id="roundNumber">1</span>/5</div>
+                    <div>Konumu haritada işaretleyin</div>
+                </div>
+                
+                <div class="score-display">
+                    <span id="totalScore">0</span> Puan
+                </div>
+                
+                <div class="map-container">
+                    <div id="guessMap"></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="guessBtn" onclick="makeGuess()">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Tahminimi Onayla
+                    </button>
+                    <button class="btn btn-secondary" onclick="skipLocation()">
+                        <i class="fas fa-forward"></i>
+                        Geç
+                    </button>
+                </div>
+                
+                <div class="results-container" id="resultsContainer">
+                    <div class="distance-score" id="distanceScore"></div>
+                    <div class="location-details" id="locationDetails"></div>
+                </div>
+                
+                <button class="btn btn-primary" id="nextRoundBtn" onclick="nextRound()" style="display: none;">
+                    <i class="fas fa-arrow-right"></i>
+                    Sonraki Raunt
+                </button>
+                
+                <div class="game-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="accuracy">0%</div>
+                        <div class="stat-label">Doğruluk</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgDistance">- km</div>
+                        <div class="stat-label">Ort. Mesafe</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 class="settings-title"><i class="fas fa-cog"></i> Ayarlar</h2>
+                <button class="close-btn" onclick="closeSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Dil / Language</label>
+                <select class="select-input" id="languageSelect">
+                    <option value="tr">Türkçe</option>
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Zamanlayıcı (saniye)</label>
+                <input type="number" class="number-input" id="timerInput" value="120" min="30" max="300">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Toplam Raunt Sayısı</label>
+                <input type="number" class="number-input" id="roundsInput" value="5" min="1" max="20">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Kıta Filtresi</label>
+                <select class="select-input" id="continentSelect" multiple size="6">
+                    <option value="all" selected>Tüm Dünya</option>
+                    <option value="europe">Avrupa</option>
+                    <option value="asia">Asya</option>
+                    <option value="africa">Afrika</option>
+                    <option value="northamerica">Kuzey Amerika</option>
+                    <option value="southamerica">Güney Amerika</option>
+                    <option value="oceania">Okyanusya</option>
+                </select>
+                <small style="color: var(--text-secondary); margin-top: 5px; display: block;">
+                    Çoklu seçim için Ctrl tuşuna basılı tutun
+                </small>
+            </div>
+            
+            <div class="setting-group">
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="soundEffects" checked>
+                    <span>Ses Efektleri</span>
+                </label>
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="showHints" checked>
+                    <span>İpuçlarını Göster</span>
+                </label>
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="difficultyHard">
+                    <span>Zor Mod (Sokak Görünümü Yok)</span>
+                </label>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveSettings()" style="width: 100%;">
+                <i class="fas fa-save"></i>
+                Ayarları Kaydet
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // GENİŞLETİLMİŞ TÜM DÜNYA LOKASYONLARI
+        const worldLocations = [
+            // Avrupa
+            { lat: 41.0082, lng: 28.9784, name: "İstanbul, Türkiye", continent: "europe", description: "Boğaz'ı ve tarihi yarımadayı gösteren manzara" },
+            { lat: 48.8566, lng: 2.3522, name: "Paris, Fransa", continent: "europe", description: "Eyfel Kulesi ve Seine Nehri" },
+            { lat: 51.5074, lng: -0.1278, name: "Londra, İngiltere", continent: "europe", description: "Big Ben ve Thames Nehri" },
+            { lat: 52.5200, lng: 13.4050, name: "Berlin, Almanya", continent: "europe", description: "Brandenburg Kapısı ve tarihi binalar" },
+            { lat: 41.9028, lng: 12.4964, name: "Roma, İtalya", continent: "europe", description: "Kolezyum ve antik Roma kalıntıları" },
+            { lat: 40.4168, lng: -3.7038, name: "Madrid, İspanya", continent: "europe", description: "Plaza Mayor ve kraliyet sarayı" },
+            { lat: 52.3676, lng: 4.9041, name: "Amsterdam, Hollanda", continent: "europe", description: "Kanallar ve tarihi evler" },
+            { lat: 59.3293, lng: 18.0686, name: "Stokholm, İsveç", continent: "europe", description: "Takımadalar ve modern mimari" },
+            
+            // Asya
+            { lat: 35.6762, lng: 139.6503, name: "Tokyo, Japonya", continent: "asia", description: "Shibuya geçişi ve modern gökdelenler" },
+            { lat: 39.9042, lng: 116.4074, name: "Pekin, Çin", continent: "asia", description: "Çin Seddi ve geleneksel mimari" },
+            { lat: 28.6139, lng: 77.2090, name: "Yeni Delhi, Hindistan", continent: "asia", description: "Hindistan Kapısı ve tarihi anıtlar" },
+            { lat: 37.5665, lng: 126.9780, name: "Seul, Güney Kore", continent: "asia", description: "Gangnam ve geleneksel hanoklar" },
+            { lat: 13.7563, lng: 100.5018, name: "Bangkok, Tayland", continent: "asia", description: "Tapınaklar ve floating market" },
+            { lat: 1.3521, lng: 103.8198, name: "Singapur", continent: "asia", description: "Marina Bay Sands ve modern şehir" },
+            
+            // Afrika
+            { lat: 30.0444, lng: 31.2357, name: "Kahire, Mısır", continent: "africa", description: "Piramitler ve Nil Nehri" },
+            { lat: 33.9249, lng: 18.4241, name: "Cape Town, Güney Afrika", continent: "africa", description: "Table Mountain ve okyanus manzarası" },
+            { lat: 6.5244, lng: 3.3792, name: "Lagos, Nijerya", continent: "africa", description: "Modern Afrika metropolü" },
+            { lat: 1.2921, lng: 36.8219, name: "Nairobi, Kenya", continent: "africa", description: "Doğu Afrika'nın iş merkezi" },
+            
+            // Kuzey Amerika
+            { lat: 40.7128, lng: -74.0060, name: "New York, USA", continent: "northamerica", description: "Empire State ve Central Park" },
+            { lat: 34.0522, lng: -118.2437, name: "Los Angeles, USA", continent: "northamerica", description: "Hollywood ve plajlar" },
+            { lat: 43.6532, lng: -79.3832, name: "Toronto, Kanada", continent: "northamerica", description: "CN Kulesi ve göller bölgesi" },
+            { lat: 19.4326, lng: -99.1332, name: "Mexico City, Meksika", continent: "northamerica", description: "Zócalo ve Aztek kalıntıları" },
+            
+            // Güney Amerika
+            { lat: -23.5505, lng: -46.6333, name: "São Paulo, Brezilya", continent: "southamerica", description: "Güney Amerika'nın finans merkezi" },
+            { lat: -34.6037, lng: -58.3816, name: "Buenos Aires, Arjantin", continent: "southamerica", description: "Tango ve Avrupa mimarisi" },
+            { lat: -12.0464, lng: -77.0428, name: "Lima, Peru", continent: "southamerica", description: "Pasifik kıyısı ve kolonyal mimari" },
+            { lat: 4.7110, lng: -74.0721, name: "Bogotá, Kolombiya", continent: "southamerica", description: "And Dağları ve modern şehir" },
+            
+            // Okyanusya
+            { lat: -33.8688, lng: 151.2093, name: "Sidney, Avustralya", continent: "oceania", description: "Opera Binası ve liman" },
+            { lat: -36.8485, lng: 174.7633, name: "Auckland, Yeni Zelanda", continent: "oceania", description: "Volkanlar ve koylar" },
+            { lat: -17.7333, lng: 168.3273, name: "Port Vila, Vanuatu", continent: "oceania", description: "Tropik ada ve mercan resifleri" }
+        ];
+
+        // Oyun ayarları
+        const settings = {
+            language: 'tr',
+            timerDuration: 120,
+            totalRounds: 5,
+            continents: ['all'],
+            soundEffects: true,
+            showHints: true,
+            difficulty: 'normal'
+        };
+
+        // Oyun durumu
+        const gameState = {
+            currentRound: 1,
+            totalScore: 0,
+            currentLocation: null,
+            playerGuess: null,
+            roundActive: true,
+            timer: settings.timerDuration,
+            roundScores: [],
+            roundDistances: [],
+            usedLocations: new Set()
+        };
+
+        let map, guessMarker, timerInterval;
+
+        // Haritayı başlat
+        function initMap() {
+            map = L.map('guessMap').setView([20, 0], 2);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            map.on('click', function(e) {
+                if (!gameState.roundActive) return;
+                
+                if (guessMarker) {
+                    map.removeLayer(guessMarker);
+                }
+                
+                guessMarker = L.marker(e.latlng).addTo(map)
+                    .bindPopup(`📍 Tahmin: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`)
+                    .openPopup();
+                
+                gameState.playerGuess = e.latlng;
+                document.getElementById('guessBtn').disabled = false;
+            });
+
+            // Loading ekranını kaldır
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 2000);
+        }
+
+        // Sokak görünümü simülasyonu
+        function updateStreetView(location) {
+            const streetView = document.getElementById('streetView');
+            const hints = settings.showHints ? location.description : 'İpuçları kapalı';
+            
+            streetView.innerHTML = `
+                <div style="width:100%; height:100%; background:linear-gradient(45deg, #1e293b, #334155); display:flex; align-items:center; justify-content:center; color:white; position:relative;">
+                    <div style="text-align:center; z-index:2; max-width:600px; padding:20px;">
+                        <div style="font-size:4em; margin-bottom:20px;">🌍</div>
+                        <h2 style="font-size:2em; margin-bottom:15px;">${location.name}</h2>
+                        <p style="font-size:1.1em; margin-bottom:25px; opacity:0.9;">${hints}</p>
+                        <div style="background:rgba(255,255,255,0.1); padding:20px; border-radius:15px; backdrop-filter:blur(10px);">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:left;">
+                                <div>
+                                    <strong>Kıta:</strong><br>
+                                    <span style="opacity:0.8;">${getContinentName(location.continent)}</span>
+                                </div>
+                                <div>
+                                    <strong>Koordinatlar:</strong><br>
+                                    <span style="opacity:0.8;">${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="position:absolute; top:0; left:0; width:100%; height:100%; 
+                                background:url('https://images.unsplash.com/photo-1483729558449-99ef09a8c325?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover; opacity:0.2;"></div>
+                </div>
+            `;
+        }
+
+        function getContinentName(continentCode) {
+            const names = {
+                'europe': 'Avrupa',
+                'asia': 'Asya', 
+                'africa': 'Afrika',
+                'northamerica': 'Kuzey Amerika',
+                'southamerica': 'Güney Amerika',
+                'oceania': 'Okyanusya'
+            };
+            return names[continentCode] || continentCode;
+        }
+
+        // Yeni raunt başlat
+        function startRound() {
+            gameState.roundActive = true;
+            gameState.playerGuess = null;
+            
+            // Filtrelenmiş lokasyonlardan seç
+            const availableLocations = worldLocations.filter(loc => 
+                settings.continents.includes('all') || settings.continents.includes(loc.continent)
+            ).filter(loc => !gameState.usedLocations.has(loc.name));
+            
+            if (availableLocations.length === 0) {
+                // Tüm lokasyonlar kullanıldı, resetle
+                gameState.usedLocations.clear();
+                startRound();
+                return;
+            }
+            
+            const randomLocation = availableLocations[Math.floor(Math.random() * availableLocations.length)];
+            gameState.currentLocation = randomLocation;
+            gameState.usedLocations.add(randomLocation.name);
+            
+            updateStreetView(randomLocation);
+            
+            if (guessMarker) {
+                map.removeLayer(guessMarker);
+            }
+            map.setView([20, 0], 2);
+            
+            document.getElementById('guessBtn').disabled = true;
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('guessBtn').style.display = 'flex';
+            
+            startTimer();
+            document.getElementById('roundNumber').textContent = gameState.currentRound;
+        }
+
+        // Kontrol fonksiyonları
+        function moveForward() { showFeedback("🚶 İleri hareket ediliyor..."); }
+        function moveBackward() { showFeedback("🔙 Geri hareket ediliyor..."); }
+        function rotateLeft() { showFeedback("↪️ Sola dönülüyor..."); }
+        function rotateRight() { showFeedback("↩️ Sağa dönülüyor..."); }
+
+        function showFeedback(message) {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.85); color: white; padding: 15px 25px; border-radius: 25px;
+                font-weight: 600; z-index: 1000; backdrop-filter: blur(10px);
+                border: 2px solid rgba(255,255,255,0.2);
+            `;
+            feedback.textContent = message;
+            document.getElementById('streetView').appendChild(feedback);
+            
+            setTimeout(() => feedback.remove(), 1200);
+        }
+
+        // Tahmin yap
+        function makeGuess() {
+            if (!gameState.playerGuess || !gameState.roundActive) return;
+            
+            gameState.roundActive = false;
+            clearInterval(timerInterval);
+            
+            const distance = calculateDistance(
+                gameState.playerGuess.lat, gameState.playerGuess.lng,
+                gameState.currentLocation.lat, gameState.currentLocation.lng
+            );
+            
+            const score = calculateScore(distance);
+            gameState.totalScore += score;
+            gameState.roundScores.push(score);
+            gameState.roundDistances.push(distance);
+            
+            showResults(distance, score);
+            updateStats();
+        }
+
+        // Konumu geç
+        function skipLocation() {
+            if (!gameState.roundActive) return;
+            gameState.roundActive = false;
+            clearInterval(timerInterval);
+            
+            showResults(0, 0, true);
+            updateStats();
+        }
+
+        // Mesafe hesapla
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Skor hesapla
+        function calculateScore(distance) {
+            if (distance < 1) return 5000;
+            if (distance < 10) return 4500;
+            if (distance < 50) return 4000;
+            if (distance < 100) return 3500;
+            if (distance < 500) return 2500;
+            if (distance < 1000) return 1500;
+            if (distance < 2000) return 1000;
+            return 500;
+        }
+
+        // Sonuçları göster
+        function showResults(distance, score, skipped = false) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const distanceScore = document.getElementById('distanceScore');
+            const locationDetails = document.getElementById('locationDetails');
+            
+            if (skipped) {
+                distanceScore.innerHTML = `<span style="color: var(--error);">⏭️ Konum Geçildi</span>`;
+                locationDetails.innerHTML = `
+                    <strong>${gameState.currentLocation.name}</strong><br>
+                    <span style="color: var(--text-secondary);">${gameState.currentLocation.description}</span>
+                `;
+            } else {
+                distanceScore.innerHTML = `
+                    <span style="color: ${score > 2500 ? 'var(--success)' : score > 1000 ? 'var(--warning)' : 'var(--error)'};">
+                        ${score} Puan • ${distance.toFixed(1)} km uzakta
+                    </span>
+                `;
+                locationDetails.innerHTML = `
+                    <strong>${gameState.currentLocation.name}</strong> - ${getContinentName(gameState.currentLocation.continent)}<br>
+                    <span style="color: var(--text-secondary);">${gameState.currentLocation.description}</span>
+                `;
+            }
+            
+            // Gerçek konumu haritada göster
+            L.marker([gameState.currentLocation.lat, gameState.currentLocation.lng], {
+                icon: new L.Icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                })
+            }).addTo(map).bindPopup(`🎯 Gerçek Konum: ${gameState.currentLocation.name}`).openPopup();
+            
+            resultsContainer.style.display = 'block';
+            document.getElementById('guessBtn').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'flex';
+        }
+
+        // Sonraki raunt
+        function nextRound() {
+            gameState.currentRound++;
+            
+            if (gameState.currentRound > settings.totalRounds) {
+                endGame();
+            } else {
+                startRound();
+            }
+        }
+
+        // Oyunu bitir
+        function endGame() {
+            const avgDistance = calculateAverageDistance();
+            const accuracy = calculateAccuracy();
+            
+            alert(`🎉 Oyun Tamamlandı!\n\nFinal Skorun: ${gameState.totalScore}\nOrtalama Mesafe: ${avgDistance.toFixed(1)} km\nDoğruluk Oranı: ${accuracy}%`);
+            
+            // Oyunu sıfırla
+            gameState.currentRound = 1;
+            gameState.totalScore = 0;
+            gameState.roundScores = [];
+            gameState.roundDistances = [];
+            gameState.usedLocations.clear();
+            
+            document.getElementById('totalScore').textContent = '0';
+            document.getElementById('accuracy').textContent = '0%';
+            document.getElementById('avgDistance').textContent = '- km';
+            
+            startRound();
+        }
+
+        // Zamanlayıcı
+        function startTimer() {
+            gameState.timer = settings.timerDuration;
+            updateTimerDisplay();
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                gameState.timer--;
+                updateTimerDisplay();
+                
+                if (gameState.timer <= 0) {
+                    clearInterval(timerInterval);
+                    if (gameState.roundActive) {
+                        makeGuess();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.timer / 60);
+            const seconds = gameState.timer % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+            // Son 10 saniyede kırmızı yap
+            if (gameState.timer <= 10) {
+                document.getElementById('timer').style.background = 'rgba(239, 68, 68, 0.95)';
+            } else {
+                document.getElementById('timer').style.background = 'rgba(99, 102, 241, 0.95)';
+            }
+        }
+
+        // İstatistikleri güncelle
+        function updateStats() {
+            document.getElementById('totalScore').textContent = gameState.totalScore;
+            document.getElementById('accuracy').textContent = calculateAccuracy() + '%';
+            document.getElementById('avgDistance').textContent = calculateAverageDistance().toFixed(1) + ' km';
+        }
+
+        function calculateAccuracy() {
+            if (gameState.roundScores.length === 0) return 0;
+            const avgScore = gameState.roundScores.reduce((a, b) => a + b, 0) / gameState.roundScores.length;
+            return Math.round((avgScore / 5000) * 100);
+        }
+
+        function calculateAverageDistance() {
+            if (gameState.roundDistances.length === 0) return 0;
+            return gameState.roundDistances.reduce((a, b) => a + b, 0) / gameState.roundDistances.length;
+        }
+
+        // Ayarlar fonksiyonları
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            settings.language = document.getElementById('languageSelect').value;
+            settings.timerDuration = parseInt(document.getElementById('timerInput').value);
+            settings.totalRounds = parseInt(document.getElementById('roundsInput').value);
+            settings.soundEffects = document.getElementById('soundEffects').checked;
+            settings.showHints = document.getElementById('showHints').checked;
+            settings.difficulty = document.getElementById('difficultyHard').checked ? 'hard' : 'normal';
+            
+            // Çoklu kıta seçimi
+            const continentSelect = document.getElementById('continentSelect');
+            settings.continents = Array.from(continentSelect.selectedOptions).map(option => option.value);
+            
+            closeSettings();
+            
+            // Ayarları uygula
+            gameState.timer = settings.timerDuration;
+            updateTimerDisplay();
+            
+            alert('✅ Ayarlar kaydedildi!');
+        }
+
+        // Sayfa yüklendiğinde
+        window.addEventListener('load', function() {
+            initMap();
+            startRound();
+            
+            // Ayarları yükle
+            document.getElementById('languageSelect').value = settings.language;
+            document.getElementById('timerInput').value = settings.timerDuration;
+            document.getElementById('roundsInput').value = settings.totalRounds;
+            document.getElementById('soundEffects').checked = settings.soundEffects;
+            document.getElementById('showHints').checked = settings.showHints;
+            document.getElementById('difficultyHard').checked = settings.difficulty === 'hard';
+        });
+    </script>
+</body>
+</html>
