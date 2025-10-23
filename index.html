@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoExplorer 2025 - Coğrafya Oyunu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-globe-americas"></i> GeoExplorer 2025</h1>
+            <p>Gerçek Görsellerle Dünyayı Keşfet!</p>
+        </div>
+        
+        <div class="game-container">
+            <!-- Street View Container -->
+            <div class="street-view-container">
+                <button class="settings-btn" onclick="openSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+                
+                <div class="timer" id="timer">02:00</div>
+                
+                <div id="streetView">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div style="text-align: center;">
+                            <div class="loading-spinner"></div>
+                            <h3>Konum Yükleniyor</h3>
+                            <p>Rastgele bir dünya lokasyonu seçiliyor...</p>
+                        </div>
+                    </div>
+                    <img id="streetViewImage" class="street-view-image" style="display: none;">
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="moveForward()">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="control-btn" onclick="moveBackward()">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <button class="control-btn" onclick="rotateLeft()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="control-btn" onclick="rotateRight()">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Game Panel -->
+            <div class="game-panel">
+                <div class="round-info">
+                    <div class="round-number"><span id="roundText">RAUNT</span> <span id="roundNumber">1</span>/<span id="totalRounds">5</span></div>
+                    <div id="instructionText">Konumu haritada işaretleyin</div>
+                </div>
+                
+                <div class="score-display">
+                    <span id="totalScore">0</span> <span id="pointsText">Puan</span>
+                </div>
+                
+                <div class="map-container">
+                    <div id="guessMap"></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="guessBtn" onclick="makeGuess()">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="guessText">Tahminimi Onayla</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="skipLocation()">
+                        <i class="fas fa-forward"></i>
+                        <span id="skipText">Geç</span>
+                    </button>
+                </div>
+                
+                <div class="results-container" id="resultsContainer">
+                    <div class="distance-score" id="distanceScore"></div>
+                    <div class="location-details" id="locationDetails"></div>
+                </div>
+                
+                <button class="btn btn-primary" id="nextRoundBtn" onclick="nextRound()" style="display: none;">
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="nextRoundText">Sonraki Raunt</span>
+                </button>
+                
+                <div class="game-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="accuracy">0%</div>
+                        <div class="stat-label" id="accuracyText">Doğruluk</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgDistance">- km</div>
+                        <div class="stat-label" id="distanceText">Ort. Mesafe</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 class="settings-title"><i class="fas fa-cog"></i> <span id="settingsTitle">Ayarlar</span></h2>
+                <button class="close-btn" onclick="closeSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label" id="languageLabel">Dil / Language</label>
+                <select class="select-input" id="languageSelect">
+                    <option value="tr">Türkçe</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label" id="timerLabel">Zamanlayıcı (saniye)</label>
+                <input type="number" class="number-input" id="timerInput" min="30" max="300">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label" id="roundsLabel">Toplam Raunt Sayısı</label>
+                <input type="number" class="number-input" id="roundsInput" min="1" max="20">
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label" id="continentLabel">Kıta Filtresi</label>
+                <select class="select-input" id="continentSelect">
+                    <option value="all">Tüm Dünya</option>
+                    <option value="europe">Avrupa</option>
+                    <option value="asia">Asya</option>
+                    <option value="africa">Afrika</option>
+                    <option value="northamerica">Kuzey Amerika</option>
+                    <option value="southamerica">Güney Amerika</option>
+                    <option value="oceania">Okyanusya</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="soundEffects">
+                    <span id="soundText">Ses Efektleri</span>
+                </label>
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="showHints" checked>
+                    <span id="hintsText">İpuçlarını Göster</span>
+                </label>
+            </div>
+            
+            <button class="btn btn-primary" onclick="saveSettings()" style="width: 100%;">
+                <i class="fas fa-save"></i>
+                <span id="saveText">Ayarları Kaydet</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
