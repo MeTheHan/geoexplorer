@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoQuest 2025 - Web Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .game-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        #worldMap {
+            width: 100%;
+            height: 500px;
+            background: #e3f2fd;
+            border-radius: 15px;
+            border: 3px solid #667eea;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .country {
+            position: absolute;
+            background: #4CAF50;
+            border: 2px solid white;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        .country:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .country.target {
+            background: #ff6b6b;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+        }
+        
+        .btn-warning {
+            background: #ff6b6b;
+        }
+        
+        .correct {
+            animation: correctGuess 0.5s ease;
+        }
+        
+        @keyframes correctGuess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .game-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            #worldMap {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-globe-americas"></i> GeoQuest 2025</h1>
+            <p>Web'de Oyna - Hiç İndirme Gerekmez!</p>
+        </div>
+        
+        <div class="game-area">
+            <div class="game-stats">
+                <div class="stat">
+                    <div class="stat-label">Find Country:</div>
+                    <div class="stat-value" id="currentCountry">-</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Score:</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Found:</div>
+                    <div class="stat-value" id="found">0/0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Time:</div>
+                    <div class="stat-value" id="timer">120</div>
+                </div>
+            </div>
+            
+            <div id="worldMap">
+                <!-- Ülkeler JavaScript ile eklenecek -->
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="startGame()">
+                    <i class="fas fa-play"></i> Start Game
+                </button>
+                <button class="btn" onclick="toggleLanguage()">
+                    <i class="fas fa-language"></i> <span id="languageBtn">Switch to Turkish</span>
+                </button>
+                <button class="btn" onclick="toggleTimer()">
+                    <i class="fas fa-clock"></i> <span id="timerBtn">Timer: ON</span>
+                </button>
+                <button class="btn btn-warning" onclick="resetGame()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <p>Bu oyun tamamen web tarayıcında çalışır. iOS, Android, PC destekler.</p>
+            <a href="main.py" style="color: white; text-decoration: underline;">
+                <i class="fas fa-download"></i> Daha hızlı için PC versiyonunu indir
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Oyun verileri
+        const gameData = {
+            english: {
+                countries: {
+                    "Turkey": "Find Turkey!",
+                    "USA": "Find United States!",
+                    "Brazil": "Find Brazil!",
+                    "Japan": "Find Japan!",
+                    "Germany": "Find Germany!",
+                    "France": "Find France!",
+                    "Italy": "Find Italy!",
+                    "Spain": "Find Spain!",
+                    "China": "Find China!",
+                    "India": "Find India!"
+                },
+                ui: {
+                    start: "Start Game",
+                    score: "Score",
+                    found: "Found",
+                    time: "Time",
+                    switchLanguage: "Switch to Turkish"
+                }
+            },
+            turkish: {
+                countries: {
+                    "Turkey": "Türkiye'yi Bul!",
+                    "USA": "Amerika'yı Bul!",
+                    "Brazil": "Brezilya'yı Bul!",
+                    "Japan": "Japonya'yı Bul!",
+                    "Germany": "Almanya'yı Bul!",
+                    "France": "Fransa'yı Bul!",
+                    "Italy": "İtalya'yı Bul!",
+                    "Spain": "İspanya'yı Bul!",
+                    "China": "Çin'i Bul!",
+                    "India": "Hindistan'ı Bul!"
+                },
+                ui: {
+                    start: "Oyunu Başlat",
+                    score: "Puan",
+                    found: "Bulunan",
+                    time: "Süre",
+                    switchLanguage: "İngilizce'ye Geç"
+                }
+            }
+        };
+
+        // Ülke pozisyonları (basit harita)
+        const countryPositions = {
+            "Turkey": { x: 45, y: 35, width: 30, height: 20 },
+            "USA": { x: 15, y: 30, width: 40, height: 25 },
+            "Brazil": { x: 30, y: 55, width: 35, height: 30 },
+            "Japan": { x: 75, y: 35, width: 25, height: 15 },
+            "Germany": { x: 48, y: 25, width: 20, height: 15 },
+            "France": { x: 45, y: 25, width: 18, height: 15 },
+            "Italy": { x: 48, y: 30, width: 15, height: 12 },
+            "Spain": { x: 42, y: 28, width: 18, height: 15 },
+            "China": { x: 65, y: 30, width: 35, height: 25 },
+            "India": { x: 60, y: 40, width: 25, height: 20 }
+        };
+
+        let currentLanguage = 'english';
+        let score = 0;
+        let found = 0;
+        let total = 0;
+        let timer = 120;
+        let gameInterval;
+        let timerInterval;
+        let currentTarget = null;
+
+        function initializeGame() {
+            createCountryElements();
+            updateUI();
+        }
+
+        function createCountryElements() {
+            const worldMap = document.getElementById('worldMap');
+            worldMap.innerHTML = '';
+            
+            Object.entries(countryPositions).forEach(([country, pos]) => {
+                const countryEl = document.createElement('div');
+                countryEl.className = 'country';
+                countryEl.style.left = `${pos.x}%`;
+                countryEl.style.top = `${pos.y}%`;
+                countryEl.style.width = `${pos.width}%`;
+                countryEl.style.height = `${pos.height}%`;
+                countryEl.textContent = country;
+                countryEl.onclick = () => checkAnswer(country);
+                
+                worldMap.appendChild(countryEl);
+            });
+        }
+
+        function startGame() {
+            resetGame();
+            selectRandomCountry();
+            
+            if (document.getElementById('timerBtn').textContent.includes('ON')) {
+                startTimer();
+            }
+            
+            gameInterval = setInterval(selectRandomCountry, 5000);
+        }
+
+        function selectRandomCountry() {
+            const countries = Object.keys(gameData[currentLanguage].countries);
+            currentTarget = countries[Math.floor(Math.random() * countries.length)];
+            
+            // Tüm ülkelerin target class'ını kaldır
+            document.querySelectorAll('.country').forEach(el => {
+                el.classList.remove('target');
+            });
+            
+            // Hedef ülkeyi işaretle
+            const targetEl = Array.from(document.querySelectorAll('.country'))
+                .find(el => el.textContent === currentTarget);
+            if (targetEl) {
+                targetEl.classList.add('target');
+            }
+            
+            document.getElementById('currentCountry').textContent = 
+                gameData[currentLanguage].countries[currentTarget];
+        }
+
+        function checkAnswer(selectedCountry) {
+            if (selectedCountry === currentTarget) {
+                score += 10;
+                found++;
+                total++;
+                
+                // Doğru cevap animasyonu
+                const targetEl = Array.from(document.querySelectorAll('.country'))
+                    .find(el => el.textContent === selectedCountry);
+                if (targetEl) {
+                    targetEl.classList.add('correct');
+                    setTimeout(() => targetEl.classList.remove('correct'), 500);
+                }
+                
+                selectRandomCountry();
+                updateUI();
+            } else {
+                total++;
+                updateUI();
+            }
+        }
+
+        function startTimer() {
+            timer = 120;
+            timerInterval = setInterval(() => {
+                timer--;
+                document.getElementById('timer').textContent = timer;
+                
+                if (timer <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+            alert(`Game Over! Final Score: ${score}`);
+        }
+
+        function resetGame() {
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+            score = 0;
+            found = 0;
+            total = 0;
+            timer = 120;
+            currentTarget = null;
+            updateUI();
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'english' ? 'turkish' : 'english';
+            updateUI();
+            
+            if (currentTarget) {
+                document.getElementById('currentCountry').textContent = 
+                    gameData[currentLanguage].countries[currentTarget];
+            }
+        }
+
+        function toggleTimer() {
+            const timerBtn = document.getElementById('timerBtn');
+            if (timerBtn.textContent.includes('ON')) {
+                timerBtn.textContent = 'Timer: OFF';
+                clearInterval(timerInterval);
+            } else {
+                timerBtn.textContent = 'Timer: ON';
+                if (gameInterval) {
+                    startTimer();
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('found').textContent = `${found}/${total}`;
+            document.getElementById('timer').textContent = timer;
+            document.getElementById('languageBtn').textContent = 
+                gameData[currentLanguage].ui.switchLanguage;
+        }
+
+        // Sayfa yüklendiğinde oyunu başlat
+        window.addEventListener('load', initializeGame);
+    </script>
+</body>
+</html>
