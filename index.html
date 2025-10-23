@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGuessr Clone - Sokak Görünümü Coğrafya Oyunu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            height: 80vh;
+        }
+        
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+        
+        .street-view-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #streetView {
+            width: 100%;
+            height: 100%;
+            background: #2c3e50;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: white;
+        }
+        
+        .game-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            color: #2c3e50;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .round-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .round-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .score-display {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #27ae60;
+        }
+        
+        .map-container {
+            flex: 1;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #guessMap {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .guess-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .guess-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .guess-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .location-info {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .distance-score {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #f1c40f;
+            margin: 10px 0;
+        }
+        
+        .actual-location {
+            font-style: italic;
+            margin: 5px 0;
+        }
+        
+        .next-round-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .next-round-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+        
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .location-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .guess-marker {
+            background: #3498db;
+        }
+        
+        .compass {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 1.5em;
+        }
+        
+        .timer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 GeoGuessr Clone</h1>
+            <p>Dünyayı Keşfet, Konumu Tahmin Et!</p>
+        </div>
+        
+        <div class="game-container">
+            <div class="street-view-container">
+                <div id="streetView">
+                    <div class="loading">
+                        <h2>🌎 Konum Yükleniyor...</h2>
+                        <p>Rastgele bir dünya lokasyonu seçiliyor</p>
+                    </div>
+                </div>
+                <div class="compass">🧭</div>
+                <div class="timer" id="timer">02:00</div>
+                <div class="controls">
+                    <button class="control-btn" onclick="moveForward()">↑</button>
+                    <button class="control-btn" onclick="moveBackward()">↓</button>
+                    <button class="control-btn" onclick="rotateLeft()">←</button>
+                    <button class="control-btn" onclick="rotateRight()">→</button>
+                </div>
+            </div>
+            
+            <div class="game-panel">
+                <div class="round-info">
+                    <div class="round-number">Raunt <span id="roundNumber">1</span>/5</div>
+                    <div>Konumu haritada işaretleyin</div>
+                </div>
+                
+                <div class="score-display">
+                    <span id="totalScore">0</span> Puan
+                </div>
+                
+                <div class="map-container">
+                    <div id="guessMap"></div>
+                    <div class="location-marker" id="guessMarker" style="display: none;"></div>
+                </div>
+                
+                <button class="guess-btn" id="guessBtn" onclick="makeGuess()">
+                    📍 Tahminimi Onayla
+                </button>
+                
+                <div class="location-info" id="locationInfo">
+                    <div class="distance-score" id="distanceScore"></div>
+                    <div class="actual-location" id="actualLocation"></div>
+                    <div id="locationDetails"></div>
+                </div>
+                
+                <button class="next-round-btn" id="nextRoundBtn" onclick="nextRound()">
+                    ➡️ Sonraki Raunt
+                </button>
+                
+                <div class="game-stats">
+                    <div class="stat">
+                        <div>Doğruluk</div>
+                        <div class="stat-value" id="accuracy">0%</div>
+                    </div>
+                    <div class="stat">
+                        <div>Ort. Mesafe</div>
+                        <div class="stat-value" id="avgDistance">- km</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Oyun durumu
+        const gameState = {
+            currentRound: 1,
+            totalRounds: 5,
+            totalScore: 0,
+            currentLocation: null,
+            playerGuess: null,
+            roundActive: true,
+            timer: 120,
+            roundScores: [],
+            roundDistances: []
+        };
+
+        // Rastgele lokasyonlar (gerçek dünya koordinatları)
+        const locations = [
+            { lat: 41.0082, lng: 28.9784, name: "İstanbul, Türkiye", description: "Boğaz köprüsü ve tarihi yarımada" },
+            { lat: 40.7128, lng: -74.0060, name: "New York, USA", description: "Empire State Binası ve Times Square" },
+            { lat: 48.8566, lng: 2.3522, name: "Paris, Fransa", description: "Eyfel Kulesi ve Louvre Müzesi" },
+            { lat: 35.6762, lng: 139.6503, name: "Tokyo, Japonya", description: "Shibuya geçişi ve Tokyo Kulesi" },
+            { lat: -33.8688, lng: 151.2093, name: "Sidney, Avustralya", description: "Opera Binası ve Liman Köprüsü" },
+            { lat: 55.7558, lng: 37.6173, name: "Moskova, Rusya", description: "Kızıl Meydan ve Saint Basil Katedrali" },
+            { lat: -22.9068, lng: -43.1729, name: "Rio de Janeiro, Brezilya", description: "Kurtarıcı İsa Heykeli ve Copacabana" },
+            { lat: 51.5074, lng: -0.1278, name: "Londra, İngiltere", description: "Big Ben ve Londra Gözü" },
+            { lat: 39.9042, lng: 116.4074, name: "Pekin, Çin", description: "Çin Seddi ve Yasak Şehir" },
+            { lat: 28.6139, lng: 77.2090, name: "Yeni Delhi, Hindistan", description: "Hindistan Kapısı ve Kızıl Kale" }
+        ];
+
+        let map;
+        let guessMarker;
+        let timerInterval;
+        let streetViewPanorama;
+
+        // Haritayı başlat
+        function initMap() {
+            map = L.map('guessMap').setView([20, 0], 2);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Haritaya tıklama olayı
+            map.on('click', function(e) {
+                if (!gameState.roundActive) return;
+                
+                if (guessMarker) {
+                    map.removeLayer(guessMarker);
+                }
+                
+                guessMarker = L.marker(e.latlng).addTo(map)
+                    .bindPopup('Tahmininiz: ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4))
+                    .openPopup();
+                
+                gameState.playerGuess = e.latlng;
+                document.getElementById('guessBtn').disabled = false;
+            });
+        }
+
+        // Sokak görünümü simülasyonu
+        function initStreetView() {
+            const streetView = document.getElementById('streetView');
+            streetView.innerHTML = `
+                <div style="width:100%; height:100%; background:linear-gradient(45deg, #2c3e50, #4a6491); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2em;">
+                    <div style="text-align:center;">
+                        <div style="font-size:3em; margin-bottom:20px;">🌍</div>
+                        <h2>Dünya Görünümü</h2>
+                        <p>360° sanal tur simülasyonu</p>
+                        <p style="margin-top:20px; font-size:0.9em; opacity:0.8;">Gerçek Street View API'si entegre edilebilir</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Yeni raunt başlat
+        function startRound() {
+            gameState.roundActive = true;
+            gameState.playerGuess = null;
+            
+            // Rastgele lokasyon seç
+            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+            gameState.currentLocation = randomLocation;
+            
+            // Sokak görünümünü güncelle
+            updateStreetView(randomLocation);
+            
+            // Haritayı sıfırla
+            if (guessMarker) {
+                map.removeLayer(guessMarker);
+            }
+            map.setView([20, 0], 2);
+            
+            // UI'ı sıfırla
+            document.getElementById('guessBtn').disabled = true;
+            document.getElementById('locationInfo').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('guessBtn').style.display = 'block';
+            
+            // Timer'ı başlat
+            startTimer();
+            
+            // Round bilgisini güncelle
+            document.getElementById('roundNumber').textContent = gameState.currentRound;
+        }
+
+        // Sokak görünümünü güncelle (simülasyon)
+        function updateStreetView(location) {
+            const streetView = document.getElementById('streetView');
+            streetView.innerHTML = `
+                <div style="width:100%; height:100%; background:linear-gradient(45deg, #34495e, #2c3e50); display:flex; align-items:center; justify-content:center; color:white; position:relative;">
+                    <div style="text-align:center; z-index:2;">
+                        <div style="font-size:4em; margin-bottom:20px;">🗺️</div>
+                        <h2>${location.name}</h2>
+                        <p>${location.description}</p>
+                        <div style="margin-top:30px; background:rgba(255,255,255,0.1); padding:15px; border-radius:10px;">
+                            <div>Enlem: ${location.lat.toFixed(4)}</div>
+                            <div>Boylam: ${location.lng.toFixed(4)}</div>
+                        </div>
+                        <p style="margin-top:20px; font-size:0.8em; opacity:0.7;">Konumu haritada tahmin edin</p>
+                    </div>
+                    <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:url('https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover; opacity:0.3;"></div>
+                </div>
+            `;
+        }
+
+        // Hareket kontrolleri (simülasyon)
+        function moveForward() {
+            showMovementFeedback("İleri hareket ediliyor...");
+        }
+
+        function moveBackward() {
+            showMovementFeedback("Geri hareket ediliyor...");
+        }
+
+        function rotateLeft() {
+            showMovementFeedback("Sola dönülüyor...");
+        }
+
+        function rotateRight() {
+            showMovementFeedback("Sağa dönülüyor...");
+        }
+
+        function showMovementFeedback(message) {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                z-index: 1000;
+                font-weight: bold;
+            `;
+            feedback.textContent = message;
+            document.querySelector('.street-view-container').appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.remove();
+            }, 1000);
+        }
+
+        // Tahmin yap
+        function makeGuess() {
+            if (!gameState.playerGuess || !gameState.roundActive) return;
+            
+            gameState.roundActive = false;
+            clearInterval(timerInterval);
+            
+            const distance = calculateDistance(
+                gameState.playerGuess.lat, 
+                gameState.playerGuess.lng,
+                gameState.currentLocation.lat, 
+                gameState.currentLocation.lng
+            );
+            
+            const score = calculateScore(distance);
+            gameState.totalScore += score;
+            gameState.roundScores.push(score);
+            gameState.roundDistances.push(distance);
+            
+            // Sonuçları göster
+            showResults(distance, score);
+            
+            // İstatistikleri güncelle
+            updateStats();
+        }
+
+        // Mesafe hesapla (km)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Dünya yarıçapı km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Skor hesapla
+        function calculateScore(distance) {
+            if (distance < 1) return 5000;
+            if (distance < 10) return 4500;
+            if (distance < 50) return 4000;
+            if (distance < 100) return 3500;
+            if (distance < 500) return 2500;
+            if (distance < 1000) return 1500;
+            if (distance < 2000) return 1000;
+            return 500;
+        }
+
+        // Sonuçları göster
+        function showResults(distance, score) {
+            const locationInfo = document.getElementById('locationInfo');
+            const distanceScore = document.getElementById('distanceScore');
+            const actualLocation = document.getElementById('actualLocation');
+            const locationDetails = document.getElementById('locationDetails');
+            
+            distanceScore.textContent = `${score} Puan • ${distance.toFixed(1)} km uzakta`;
+            actualLocation.textContent = `Gerçek Konum: ${gameState.currentLocation.name}`;
+            locationDetails.textContent = gameState.currentLocation.description;
+            
+            // Gerçek konumu haritada göster
+            L.marker([gameState.currentLocation.lat, gameState.currentLocation.lng])
+                .addTo(map)
+                .bindPopup(`Gerçek Konum: ${gameState.currentLocation.name}`)
+                .openPopup();
+            
+            locationInfo.style.display = 'block';
+            document.getElementById('guessBtn').style.display = 'none';
+            document.getElementById('nextRoundBtn').style.display = 'block';
+        }
+
+        // Sonraki raunt
+        function nextRound() {
+            gameState.currentRound++;
+            
+            if (gameState.currentRound > gameState.totalRounds) {
+                endGame();
+            } else {
+                startRound();
+            }
+        }
+
+        // Oyunu bitir
+        function endGame() {
+            alert(`Oyun Bitti! Final Skorun: ${gameState.totalScore}\nOrtalama Mesafe: ${calculateAverageDistance().toFixed(1)} km`);
+            
+            // Oyunu sıfırla
+            gameState.currentRound = 1;
+            gameState.totalScore = 0;
+            gameState.roundScores = [];
+            gameState.roundDistances = [];
+            
+            document.getElementById('totalScore').textContent = '0';
+            document.getElementById('accuracy').textContent = '0%';
+            document.getElementById('avgDistance').textContent = '- km';
+            
+            startRound();
+        }
+
+        // Zamanlayıcı
+        function startTimer() {
+            gameState.timer = 120;
+            updateTimerDisplay();
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                gameState.timer--;
+                updateTimerDisplay();
+                
+                if (gameState.timer <= 0) {
+                    clearInterval(timerInterval);
+                    if (gameState.roundActive) {
+                        makeGuess(); // Süre dolunca otomatik tahmin
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.timer / 60);
+            const seconds = gameState.timer % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // İstatistikleri güncelle
+        function updateStats() {
+            document.getElementById('totalScore').textContent = gameState.totalScore;
+            document.getElementById('accuracy').textContent = calculateAccuracy() + '%';
+            document.getElementById('avgDistance').textContent = calculateAverageDistance().toFixed(1) + ' km';
+        }
+
+        function calculateAccuracy() {
+            if (gameState.roundScores.length === 0) return 0;
+            const avgScore = gameState.roundScores.reduce((a, b) => a + b, 0) / gameState.roundScores.length;
+            return Math.round((avgScore / 5000) * 100);
+        }
+
+        function calculateAverageDistance() {
+            if (gameState.roundDistances.length === 0) return 0;
+            return gameState.roundDistances.reduce((a, b) => a + b, 0) / gameState.roundDistances.length;
+        }
+
+        // Sayfa yüklendiğinde oyunu başlat
+        window.addEventListener('load', function() {
+            initMap();
+            initStreetView();
+            startRound();
+        });
+    </script>
+</body>
+</html>
