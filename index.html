@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoExplorer - Coğrafya Oyunu</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1d1d1f;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .youtube-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #FF0000, #CC0000);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .youtube-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.4);
+        }
+
+        .start-screen {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 50px 40px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.4em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
+            font-weight: 600;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(0, 122, 255, 0.4);
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 25px;
+            display: none;
+        }
+
+        @media (max-width: 968px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+        }
+
+        .location-info {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .timer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .timer {
+            background: linear-gradient(135deg, #FF3B30, #FF9500);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
+        }
+
+        .round-info {
+            background: linear-gradient(135deg, #007AFF, #5AC8FA);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 18px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+        }
+
+        .target-location {
+            text-align: center;
+        }
+
+        .target-location h2 {
+            color: #1d1d1f; /* Düzeltildi - siyah renk */
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .location-detail {
+            margin: 15px 0;
+            font-size: 1.1em;
+            padding: 15px;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1d1d1f; /* Düzeltildi - siyah renk */
+        }
+
+        .location-detail i {
+            width: 20px;
+            color: #007AFF;
+        }
+
+        .location-detail strong {
+            color: #1d1d1f; /* Düzeltildi */
+        }
+
+        .game-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-display {
+            font-size: 2.2em;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(135deg, #34C759, #30B0C7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+            text-shadow: 0 2px 10px rgba(52, 199, 89, 0.2);
+        }
+
+        #guessMap {
+            width: 100%;
+            height: 450px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #34C759, #30D158);
+            color: white;
+            box-shadow: 0 6px 20px rgba(52, 199, 89, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #8E8E93, #AEAEB2);
+            color: white;
+            box-shadow: 0 6px 20px rgba(142, 142, 147, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results-container {
+            background: linear-gradient(135deg, #F2F2F7, #FFFFFF);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            display: none;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #007AFF, #5AC8FA);
+            color: white;
+            padding: 20px 15px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .welcome-text {
+            font-size: 1.2em;
+            line-height: 1.7;
+            color: #1d1d1f;
+            margin-bottom: 25px;
+        }
+
+        .instructions {
+            background: linear-gradient(135deg, #E3F2FD, #F3E5F5);
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+            text-align: left;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .instructions h3 {
+            color: #007AFF;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 12px 0;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .instructions li i {
+            color: #34C759;
+            margin-top: 3px;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF2D55, #FF375F);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Responsive iyileştirmeler */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .start-screen {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .game-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .start-screen,
+            .location-info,
+            .game-panel {
+                background: rgba(28, 28, 30, 0.95);
+                color: #ffffff;
+            }
+            
+            .location-detail {
+                background: rgba(44, 44, 46, 0.8);
+                color: #ffffff;
+            }
+            
+            .instructions {
+                background: linear-gradient(135deg, #1C1C1E, #2C2C2E);
+                color: #ffffff;
+            }
+            
+            .target-location h2 {
+                color: #ffffff;
+                background: linear-gradient(135deg, #64D2FF, #5E5CE6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            
+            .location-detail,
+            .location-detail strong {
+                color: #ffffff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌍 GeoExplorer</h1>
+            <p>200+ Şehir ile Dünya Coğrafyasını Keşfet!</p>
+            
+            <!-- YouTube Butonu -->
+            <a href="https://youtube.com/@mtechnow" target="_blank" class="youtube-btn">
+                <i class="fab fa-youtube"></i>
+                Visit My YouTube Channel
+            </a>
+        </div>
+        
+        <div class="start-screen" id="startScreen">
+            <h2>Coğrafya Oyununa Hoş Geldiniz! 🎯</h2>
+            <div class="welcome-text">
+                <p><strong>200'den fazla dünya şehrinden</strong> rastgele biri seçilecek ve siz bu şehri harita üzerinde bulmaya çalışacaksınız.</p>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-gamepad"></i> Nasıl Oynanır:</h3>
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Ekranda gösterilen şehri haritada bulun</li>
+                    <li><i class="fas fa-mouse-pointer"></i> Haritaya tıklayarak tahmininizi işaretleyin</li>
+                    <li><i class="fas fa-star"></i> Ne kadar yakın olursanız o kadar çok puan alırsınız</li>
+                    <li><i class="fas fa-trophy"></i> Toplam 5 raunt üzerinden oynanır</li>
+                    <li><i class="fas fa-clock"></i> Her raunt için 2 dakika süreniz var</li>
+                    <li><i class="fas fa-globe-americas"></i> <strong>200+ farklı şehir</strong> arasından rastgele seçilir</li>
+                </ul>
+            </div>
+            
+            <button class="start-btn" onclick="startGame()">
+                <i class="fas fa-rocket"></i> OYUNU BAŞLAT
+            </button>
+        </div>
+        
+        <div class="game-container" id="gameContainer">
+            <div class="location-info">
+                <div class="timer-container">
+                    <div class="timer" id="timer">
+                        <i class="fas fa-clock"></i> 02:00
+                    </div>
+                    <div class="round-info">
+                        <i class="fas fa-flag"></i> Raunt <span id="roundNumber">1</span>/<span id="totalRounds">5</span>
+                    </div>
+                </div>
+                
+                <div class="target-location">
+                    <h2 id="locationName">-</h2>
+                    <div class="location-detail">
+                        <i class="fas fa-city"></i>
+                        <div>
+                            <strong>Şehir:</strong> <span id="cityCountry">-</span>
+                        </div>
+                    </div>
+                    <div class="location-detail">
+                        <i class="fas fa-globe-europe"></i>
+                        <div>
+                            <strong>Kıta:</strong> <span id="continentValue">-</span>
+                        </div>
+                    </div>
+                    <div class="location-detail">
+                        <i class="fas fa-map-pin"></i>
+                        <div>
+                            <strong>Koordinatlar:</strong> <span id="coordinatesValue">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-panel">
+                <div class="score-display">
+                    <span id="totalScore">0</span> Puan
+                </div>
+                
+                <div id="guessMap"></div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="guessBtn" onclick="makeGuess()">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="guessText">Tahminimi Onayla</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="skipLocation()">
+                        <i class="fas fa-forward"></i>
+                        <span id="skipText">Geç</span>
+                    </button>
+                </div>
+                
+                <div class="results-container" id="resultsContainer">
+                    <div class="distance-score" id="distanceScore"></div>
+                    <div class="location-details" id="locationDetails"></div>
+                </div>
+                
+                <button class="btn btn-primary" id="nextRoundBtn" onclick="nextRound()" style="display: none; width: 100%;">
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="nextRoundText">Sonraki Raunt</span>
+                </button>
+                
+                <div class="game-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="accuracy">0%</div>
+                        <div class="stat-label">Doğruluk</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgDistance">- km</div>
+                        <div class="stat-label">Ort. Mesafe</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="foundCount">0</div>
+                        <div class="stat-label">Bulunan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        // 200+ GERÇEK DÜNYA ŞEHİRLERİ
+        const worldLocations = [
+            // Türkiye (15 şehir)
+            { lat: 41.0082, lng: 28.9784, city: "İstanbul", country: "Türkiye", continent: "Avrupa" },
+            { lat: 39.9334, lng: 32.8597, city: "Ankara", country: "Türkiye", continent: "Avrupa" },
+            { lat: 38.4192, lng: 27.1287, city: "İzmir", country: "Türkiye", continent: "Avrupa" },
+            { lat: 36.8841, lng: 30.7056, city: "Antalya", country: "Türkiye", continent: "Avrupa" },
+            { lat: 40.1885, lng: 29.0610, city: "Bursa", country: "Türkiye", continent: "Avrupa" },
+            { lat: 41.2867, lng: 36.3301, city: "Samsun", country: "Türkiye", continent: "Avrupa" },
+            { lat: 37.0000, lng: 35.3213, city: "Adana", country: "Türkiye", continent: "Avrupa" },
+            { lat: 37.8667, lng: 32.4833, city: "Konya", country: "Türkiye", continent: "Avrupa" },
+            { lat: 40.7667, lng: 30.4000, city: "Sakarya", country: "Türkiye", continent: "Avrupa" },
+            { lat: 38.6667, lng: 34.7167, city: "Nevşehir", country: "Türkiye", continent: "Avrupa" },
+            { lat: 41.6667, lng: 26.5667, city: "Edirne", country: "Türkiye", continent: "Avrupa" },
+            { lat: 37.7767, lng: 29.0864, city: "Denizli", country: "Türkiye", continent: "Avrupa" },
+            { lat: 40.6000, lng: 33.6167, city: "Çorum", country: "Türkiye", continent: "Avrupa" },
+            { lat: 39.7500, lng: 37.0167, city: "Sivas", country: "Türkiye", continent: "Avrupa" },
+            { lat: 41.0167, lng: 39.7333, city: "Trabzon", country: "Türkiye", continent: "Avrupa" },
+
+            // Almanya (12 şehir)
+            { lat: 52.5200, lng: 13.4050, city: "Berlin", country: "Almanya", continent: "Avrupa" },
+            { lat: 53.5511, lng: 9.9937, city: "Hamburg", country: "Almanya", continent: "Avrupa" },
+            { lat: 50.9375, lng: 6.9603, city: "Köln", country: "Almanya", continent: "Avrupa" },
+            { lat: 48.1351, lng: 11.5820, city: "Münih", country: "Almanya", continent: "Avrupa" },
+            { lat: 50.1109, lng: 8.6821, city: "Frankfurt", country: "Almanya", continent: "Avrupa" },
+            { lat: 51.2277, lng: 6.7735, city: "Düsseldorf", country: "Almanya", continent: "Avrupa" },
+            { lat: 49.4521, lng: 11.0767, city: "Nürnberg", country: "Almanya", continent: "Avrupa" },
+            { lat: 51.5136, lng: 7.4653, city: "Dortmund", country: "Almanya", continent: "Avrupa" },
+            { lat: 51.4818, lng: 7.2162, city: "Bochum", country: "Almanya", continent: "Avrupa" },
+            { lat: 52.3759, lng: 9.7320, city: "Hannover", country: "Almanya", continent: "Avrupa" },
+            { lat: 51.3397, lng: 12.3731, city: "Leipzig", country: "Almanya", continent: "Avrupa" },
+            { lat: 51.0504, lng: 13.7373, city: "Dresden", country: "Almanya", continent: "Avrupa" },
+
+            // Fransa (12 şehir)
+            { lat: 48.8566, lng: 2.3522, city: "Paris", country: "Fransa", continent: "Avrupa" },
+            { lat: 45.7640, lng: 4.8357, city: "Lyon", country: "Fransa", continent: "Avrupa" },
+            { lat: 43.2965, lng: 5.3698, city: "Marsilya", country: "Fransa", continent: "Avrupa" },
+            { lat: 43.6047, lng: 1.4442, city: "Toulouse", country: "Fransa", continent: "Avrupa" },
+            { lat: 44.8378, lng: -0.5792, city: "Bordeaux", country: "Fransa", continent: "Avrupa" },
+            { lat: 47.2184, lng: -1.5536, city: "Nantes", country: "Fransa", continent: "Avrupa" },
+            { lat: 48.1173, lng: -1.6778, city: "Rennes", country: "Fransa", continent: "Avrupa" },
+            { lat: 47.3220, lng: 5.0415, city: "Dijon", country: "Fransa", continent: "Avrupa" },
+            { lat: 49.2583, lng: 4.0317, city: "Reims", country: "Fransa", continent: "Avrupa" },
+            { lat: 43.7000, lng: 7.2500, city: "Nice", country: "Fransa", continent: "Avrupa" },
+            { lat: 48.5833, lng: 7.7500, city: "Strazburg", country: "Fransa", continent: "Avrupa" },
+            { lat: 45.8333, lng: 1.2500, city: "Limoges", country: "Fransa", continent: "Avrupa" },
+
+            // İngiltere (10 şehir)
+            { lat: 51.5074, lng: -0.1278, city: "Londra", country: "İngiltere", continent: "Avrupa" },
+            { lat: 53.4808, lng: -2.2426, city: "Manchester", country: "İngiltere", continent: "Avrupa" },
+            { lat: 52.4862, lng: -1.8904, city: "Birmingham", country: "İngiltere", continent: "Avrupa" },
+            { lat: 53.8008, lng: -1.5491, city: "Leeds", country: "İngiltere", continent: "Avrupa" },
+            { lat: 55.9533, lng: -3.1883, city: "Edinburgh", country: "İskoçya", continent: "Avrupa" },
+            { lat: 51.4545, lng: -2.5879, city: "Bristol", country: "İngiltere", continent: "Avrupa" },
+            { lat: 53.4084, lng: -2.9916, city: "Liverpool", country: "İngiltere", continent: "Avrupa" },
+            { lat: 54.9783, lng: -1.6178, city: "Newcastle", country: "İngiltere", continent: "Avrupa" },
+            { lat: 52.9548, lng: -1.1581, city: "Nottingham", country: "İngiltere", continent: "Avrupa" },
+            { lat: 50.9097, lng: -1.4044, city: "Southampton", country: "İngiltere", continent: "Avrupa" },
+
+            // İtalya (10 şehir)
+            { lat: 41.9028, lng: 12.4964, city: "Roma", country: "İtalya", continent: "Avrupa" },
+            { lat: 45.4642, lng: 9.1900, city: "Milano", country: "İtalya", continent: "Avrupa" },
+            { lat: 40.8518, lng: 14.2681, city: "Napoli", country: "İtalya", continent: "Avrupa" },
+            { lat: 44.4056, lng: 8.9463, city: "Genova", country: "İtalya", continent: "Avrupa" },
+            { lat: 45.4386, lng: 12.3267, city: "Venedik", country: "İtalya", continent: "Avrupa" },
+            { lat: 43.7696, lng: 11.2558, city: "Floransa", country: "İtalya", continent: "Avrupa" },
+            { lat: 44.4938, lng: 11.3426, city: "Bologna", country: "İtalya", continent: "Avrupa" },
+            { lat: 38.1158, lng: 13.3615, city: "Palermo", country: "İtalya", continent: "Avrupa" },
+            { lat: 41.1171, lng: 16.8719, city: "Bari", country: "İtalya", continent: "Avrupa" },
+            { lat: 45.0705, lng: 7.6869, city: "Torino", country: "İtalya", continent: "Avrupa" },
+
+            // İspanya (10 şehir)
+            { lat: 40.4168, lng: -3.7038, city: "Madrid", country: "İspanya", continent: "Avrupa" },
+            { lat: 41.3851, lng: 2.1734, city: "Barselona", country: "İspanya", continent: "Avrupa" },
+            { lat: 37.3891, lng: -5.9845, city: "Sevilla", country: "İspanya", continent: "Avrupa" },
+            { lat: 39.4699, lng: -0.3763, city: "Valencia", country: "İspanya", continent: "Avrupa" },
+            { lat: 36.7213, lng: -4.4214, city: "Malaga", country: "İspanya", continent: "Avrupa" },
+            { lat: 43.2630, lng: -2.9350, city: "Bilbao", country: "İspanya", continent: "Avrupa" },
+            { lat: 37.9922, lng: -1.1307, city: "Murcia", country: "İspanya", continent: "Avrupa" },
+            { lat: 42.8782, lng: -8.5448, city: "Santiago", country: "İspanya", continent: "Avrupa" },
+            { lat: 28.4698, lng: -16.2550, city: "Santa Cruz", country: "İspanya", continent: "Avrupa" },
+            { lat: 39.5696, lng: 2.6502, city: "Palma", country: "İspanya", continent: "Avrupa" },
+
+            // ABD (25 şehir)
+            { lat: 40.7128, lng: -74.0060, city: "New York", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 34.0522, lng: -118.2437, city: "Los Angeles", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 41.8781, lng: -87.6298, city: "Chicago", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 29.7604, lng: -95.3698, city: "Houston", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 33.4484, lng: -112.0740, city: "Phoenix", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 39.7392, lng: -104.9903, city: "Denver", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 37.7749, lng: -122.4194, city: "San Francisco", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 47.6062, lng: -122.3321, city: "Seattle", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 42.3601, lng: -71.0589, city: "Boston", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 32.7767, lng: -96.7970, city: "Dallas", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 39.9526, lng: -75.1652, city: "Philadelphia", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 25.7617, lng: -80.1918, city: "Miami", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 33.7490, lng: -84.3880, city: "Atlanta", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 42.3314, lng: -83.0458, city: "Detroit", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 44.9778, lng: -93.2650, city: "Minneapolis", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 35.2271, lng: -80.8431, city: "Charlotte", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 39.0997, lng: -94.5786, city: "Kansas City", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 36.1627, lng: -86.7816, city: "Nashville", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 39.1031, lng: -84.5120, city: "Cincinnati", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 35.4676, lng: -97.5164, city: "Oklahoma City", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 38.6270, lng: -90.1994, city: "St. Louis", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 39.9612, lng: -82.9988, city: "Columbus", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 43.1610, lng: -77.6109, city: "Rochester", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 36.1699, lng: -115.1398, city: "Las Vegas", country: "ABD", continent: "Kuzey Amerika" },
+            { lat: 32.7157, lng: -117.1611, city: "San Diego", country: "ABD", continent: "Kuzey Amerika" },
+
+            // Kanada (10 şehir)
+            { lat: 43.6532, lng: -79.3832, city: "Toronto", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 45.5017, lng: -73.5673, city: "Montreal", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 49.2827, lng: -123.1207, city: "Vancouver", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 51.0447, lng: -114.0719, city: "Calgary", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 53.5444, lng: -113.4909, city: "Edmonton", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 45.4215, lng: -75.6972, city: "Ottawa", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 49.8951, lng: -97.1384, city: "Winnipeg", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 44.6488, lng: -63.5752, city: "Halifax", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 46.8139, lng: -71.2080, city: "Quebec", country: "Kanada", continent: "Kuzey Amerika" },
+            { lat: 43.2557, lng: -79.8711, city: "Hamilton", country: "Kanada", continent: "Kuzey Amerika" },
+
+            // Brezilya (10 şehir)
+            { lat: -23.5505, lng: -46.6333, city: "São Paulo", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -22.9068, lng: -43.1729, city: "Rio de Janeiro", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -15.7975, lng: -47.8919, city: "Brasília", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -3.7327, lng: -38.5270, city: "Fortaleza", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -12.9714, lng: -38.5014, city: "Salvador", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -19.9167, lng: -43.9333, city: "Belo Horizonte", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -30.0331, lng: -51.2300, city: "Porto Alegre", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -8.0476, lng: -34.8770, city: "Recife", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -25.4284, lng: -49.2733, city: "Curitiba", country: "Brezilya", continent: "Güney Amerika" },
+            { lat: -16.6799, lng: -49.2550, city: "Goiânia", country: "Brezilya", continent: "Güney Amerika" },
+
+            // Arjantin (8 şehir)
+            { lat: -34.6037, lng: -58.3816, city: "Buenos Aires", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -31.4201, lng: -64.1888, city: "Córdoba", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -32.8895, lng: -68.8458, city: "Mendoza", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -24.7859, lng: -65.4117, city: "Salta", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -26.8083, lng: -65.2176, city: "San Miguel", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -31.6333, lng: -60.7000, city: "Santa Fe", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -38.0000, lng: -57.5500, city: "Mar del Plata", country: "Arjantin", continent: "Güney Amerika" },
+            { lat: -27.4512, lng: -58.9866, city: "Corrientes", country: "Arjantin", continent: "Güney Amerika" },
+
+            // Çin (15 şehir)
+            { lat: 39.9042, lng: 116.4074, city: "Pekin", country: "Çin", continent: "Asya" },
+            { lat: 31.2304, lng: 121.4737, city: "Şangay", country: "Çin", continent: "Asya" },
+            { lat: 23.1291, lng: 113.2644, city: "Guangzhou", country: "Çin", continent: "Asya" },
+            { lat: 30.5728, lng: 104.0668, city: "Chengdu", country: "Çin", continent: "Asya" },
+            { lat: 29.4316, lng: 106.9123, city: "Chongqing", country: "Çin", continent: "Asya" },
+            { lat: 34.3416, lng: 108.9398, city: "Xi'an", country: "Çin", continent: "Asya" },
+            { lat: 38.0428, lng: 114.5149, city: "Shijiazhuang", country: "Çin", continent: "Asya" },
+            { lat: 36.0659, lng: 120.3826, city: "Qingdao", country: "Çin", continent: "Asya" },
+            { lat: 45.8038, lng: 126.5349, city: "Harbin", country: "Çin", continent: "Asya" },
+            { lat: 28.2282, lng: 112.9388, city: "Changsha", country: "Çin", continent: "Asya" },
+            { lat: 30.6633, lng: 104.0667, city: "Nanjing", country: "Çin", continent: "Asya" },
+            { lat: 36.6512, lng: 117.1200, city: "Jinan", country: "Çin", continent: "Asya" },
+            { lat: 43.8171, lng: 87.6005, city: "Urumçi", country: "Çin", continent: "Asya" },
+            { lat: 22.5431, lng: 114.0579, city: "Shenzhen", country: "Çin", continent: "Asya" },
+            { lat: 38.2682, lng: 115.4845, city: "Baoding", country: "Çin", continent: "Asya" },
+
+            // Japonya (10 şehir)
+            { lat: 35.6762, lng: 139.6503, city: "Tokyo", country: "Japonya", continent: "Asya" },
+            { lat: 34.6937, lng: 135.5023, city: "Osaka", country: "Japonya", continent: "Asya" },
+            { lat: 35.0116, lng: 135.7681, city: "Kyoto", country: "Japonya", continent: "Asya" },
+            { lat: 35.1815, lng: 136.9066, city: "Nagoya", country: "Japonya", continent: "Asya" },
+            { lat: 43.0618, lng: 141.3545, city: "Sapporo", country: "Japonya", continent: "Asya" },
+            { lat: 33.5902, lng: 130.4017, city: "Fukuoka", country: "Japonya", continent: "Asya" },
+            { lat: 34.3853, lng: 132.4553, city: "Hiroşima", country: "Japonya", continent: "Asya" },
+            { lat: 38.2682, lng: 140.8694, city: "Sendai", country: "Japonya", continent: "Asya" },
+            { lat: 26.2124, lng: 127.6809, city: "Okinawa", country: "Japonya", continent: "Asya" },
+            { lat: 34.6551, lng: 133.9195, city: "Okayama", country: "Japonya", continent: "Asya" },
+
+            // Güney Kore (8 şehir)
+            { lat: 37.5665, lng: 126.9780, city: "Seul", country: "Güney Kore", continent: "Asya" },
+            { lat: 35.1796, lng: 129.0756, city: "Busan", country: "Güney Kore", continent: "Asya" },
+            { lat: 37.4563, lng: 126.7052, city: "Incheon", country: "Güney Kore", continent: "Asya" },
+            { lat: 36.3504, lng: 127.3845, city: "Daejeon", country: "Güney Kore", continent: "Asya" },
+            { lat: 35.1595, lng: 126.8526, city: "Gwangju", country: "Güney Kore", continent: "Asya" },
+            { lat: 35.8714, lng: 128.6014, city: "Daegu", country: "Güney Kore", continent: "Asya" },
+            { lat: 36.4801, lng: 127.2892, city: "Cheongju", country: "Güney Kore", continent: "Asya" },
+            { lat: 37.2636, lng: 127.0286, city: "Suwon", country: "Güney Kore", continent: "Asya" },
+
+            // Hindistan (15 şehir)
+            { lat: 28.6139, lng: 77.2090, city: "Yeni Delhi", country: "Hindistan", continent: "Asya" },
+            { lat: 19.0760, lng: 72.8777, city: "Mumbai", country: "Hindistan", continent: "Asya" },
+            { lat: 13.0827, lng: 80.2707, city: "Chennai", country: "Hindistan", continent: "Asya" },
+            { lat: 12.9716, lng: 77.5946, city: "Bangalore", country: "Hindistan", continent: "Asya" },
+            { lat: 22.5726, lng: 88.3639, city: "Kolkata", country: "Hindistan", continent: "Asya" },
+            { lat: 17.3850, lng: 78.4867, city: "Hyderabad", country: "Hindistan", continent: "Asya" },
+            { lat: 23.0225, lng: 72.5714, city: "Ahmedabad", country: "Hindistan", continent: "Asya" },
+            { lat: 26.9124, lng: 75.7873, city: "Jaipur", country: "Hindistan", continent: "Asya" },
+            { lat: 18.5204, lng: 73.8567, city: "Pune", country: "Hindistan", continent: "Asya" },
+            { lat: 30.7333, lng: 76.7794, city: "Chandigarh", country: "Hindistan", continent: "Asya" },
+            { lat: 25.5941, lng: 85.1376, city: "Patna", country: "Hindistan", continent: "Asya" },
+            { lat: 26.8467, lng: 80.9462, city: "Lucknow", country: "Hindistan", continent: "Asya" },
+            { lat: 21.1458, lng: 79.0882, city: "Nagpur", country: "Hindistan", continent: "Asya" },
+            { lat: 15.2993, lng: 74.1240, city: "Goa", country: "Hindistan", continent: "Asya" },
+            { lat: 9.9312, lng: 76.2673, city: "Kochi", country: "Hindistan", continent: "Asya" },
+
+            // Avustralya (8 şehir)
+            { lat: -33.8688, lng: 151.2093, city: "Sidney", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -37.8136, lng: 144.9631, city: "Melbourne", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -27.4698, lng: 153.0251, city: "Brisbane", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -31.9505, lng: 115.8605, city: "Perth", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -34.9285, lng: 138.6007, city: "Adelaide", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -35.2809, lng: 149.1300, city: "Canberra", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -42.8821, lng: 147.3272, city: "Hobart", country: "Avustralya", continent: "Okyanusya" },
+            { lat: -12.4634, lng: 130.8456, city: "Darwin", country: "Avustralya", continent: "Okyanusya" },
+
+            // Afrika (15 şehir)
+            { lat: -33.9249, lng: 18.4241, city: "Cape Town", country: "Güney Afrika", continent: "Afrika" },
+            { lat: -26.2041, lng: 28.0473, city: "Johannesburg", country: "Güney Afrika", continent: "Afrika" },
+            { lat: 30.0444, lng: 31.2357, city: "Kahire", country: "Mısır", continent: "Afrika" },
+            { lat: 6.5244, lng: 3.3792, city: "Lagos", country: "Nijerya", continent: "Afrika" },
+            { lat: -1.2921, lng: 36.8219, city: "Nairobi", country: "Kenya", continent: "Afrika" },
+            { lat: 33.5731, lng: -7.5898, city: "Casablanca", country: "Fas", continent: "Afrika" },
+            { lat: 5.6037, lng: -0.1870, city: "Accra", country: "Gana", continent: "Afrika" },
+            { lat: -15.3875, lng: 28.3228, city: "Lusaka", country: "Zambiya", continent: "Afrika" },
+            { lat: -18.6657, lng: 35.5296, city: "Beira", country: "Mozambik", continent: "Afrika" },
+            { lat: 12.6392, lng: -8.0029, city: "Bamako", country: "Mali", continent: "Afrika" },
+            { lat: 14.7167, lng: -17.4677, city: "Dakar", country: "Senegal", continent: "Afrika" },
+            { lat: 9.0300, lng: 38.7400, city: "Addis Ababa", country: "Etiyopya", continent: "Afrika" },
+            { lat: -4.4419, lng: 15.2663, city: "Kinşasa", country: "Kongo", continent: "Afrika" },
+            { lat: 36.8000, lng: 10.1800, city: "Tunus", country: "Tunus", continent: "Afrika" },
+            { lat: -25.9667, lng: 32.5833, city: "Maputo", country: "Mozambik", continent: "Afrika" }
+        ];
+
+        // Oyun değişkenleri
+        let currentRound = 1;
+        const totalRounds = 5;
+        let totalScore = 0;
+        let currentLocation = null;
+        let guessMarker = null;
+        let map = null;
+        let timerInterval = null;
+        let timeLeft = 120;
+        let userGuess = null;
+        let gameStarted = false;
+        let roundLocations = [];
+        let roundResults = [];
+
+        // DOM elementleri
+        const startScreen = document.getElementById('startScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const timerElement = document.getElementById('timer');
+        const roundNumberElement = document.getElementById('roundNumber');
+        const locationNameElement = document.getElementById('locationName');
+        const cityCountryElement = document.getElementById('cityCountry');
+        const continentElement = document.getElementById('continentValue');
+        const coordinatesElement = document.getElementById('coordinatesValue');
+        const totalScoreElement = document.getElementById('totalScore');
+        const guessBtn = document.getElementById('guessBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const distanceScoreElement = document.getElementById('distanceScore');
+        const locationDetailsElement = document.getElementById('locationDetails');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const accuracyElement = document.getElementById('accuracy');
+        const avgDistanceElement = document.getElementById('avgDistance');
+        const foundCountElement = document.getElementById('foundCount');
+
+        // Oyunu başlat
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameContainer.style.display = 'grid';
+            
+            // 5 rastgele lokasyon seç
+            roundLocations = getRandomLocations(totalRounds);
+            currentRound = 1;
+            totalScore = 0;
+            roundResults = [];
+            
+            updateScore();
+            initMap();
+            startRound();
+        }
+
+        // Rastgele lokasyonlar seç
+        function getRandomLocations(count) {
+            const shuffled = [...worldLocations].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        // Haritayı başlat
+        function initMap() {
+            if (map) {
+                map.remove();
+            }
+            
+            map = L.map('guessMap').setView([20, 0], 2);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Haritaya tıklama olayı
+            map.on('click', function(e) {
+                if (!gameStarted || userGuess !== null) return;
+                
+                if (guessMarker) {
+                    map.removeLayer(guessMarker);
+                }
+                
+                guessMarker = L.marker(e.latlng).addTo(map)
+                    .bindPopup('<i class="fas fa-map-pin"></i> Tahmininiz: ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4))
+                    .openPopup();
+                
+                userGuess = e.latlng;
+                guessBtn.disabled = false;
+                guessBtn.innerHTML = '<i class="fas fa-check-circle"></i> Tahminimi Onayla';
+            });
+        }
+
+        // Raunt başlat
+        function startRound() {
+            gameStarted = true;
+            userGuess = null;
+            timeLeft = 120;
+            
+            // Mevcut lokasyonu al - HATA DÜZELTİLDİ
+            if (currentRound <= roundLocations.length) {
+                currentLocation = roundLocations[currentRound - 1];
+            } else {
+                endGame();
+                return;
+            }
+            
+            // Bilgileri güncelle
+            updateLocationInfo();
+            updateTimer();
+            
+            // Tahmin butonunu sıfırla
+            guessBtn.disabled = true;
+            guessBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Haritaya tıklayın';
+            resultsContainer.style.display = 'none';
+            nextRoundBtn.style.display = 'none';
+            
+            // Haritayı temizle
+            if (guessMarker) {
+                map.removeLayer(guessMarker);
+                guessMarker = null;
+            }
+            
+            // Timer'ı sıfırla
+            timerElement.style.background = 'linear-gradient(135deg, #FF3B30, #FF9500)';
+            
+            // Timer'ı başlat
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Lokasyon bilgilerini güncelle
+        function updateLocationInfo() {
+            locationNameElement.textContent = currentLocation.city;
+            cityCountryElement.textContent = `${currentLocation.city}, ${currentLocation.country}`;
+            continentElement.textContent = currentLocation.continent;
+            coordinatesElement.textContent = `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+            roundNumberElement.textContent = currentRound;
+        }
+
+        // Timer'ı güncelle
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.innerHTML = `<i class="fas fa-clock"></i> ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 30 && timeLeft > 10) {
+                timerElement.style.background = 'linear-gradient(135deg, #FF9500, #FFCC00)';
+            } else if (timeLeft <= 10) {
+                timerElement.style.background = 'linear-gradient(135deg, #FF3B30, #FF6B6B)';
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                skipLocation();
+            } else {
+                timeLeft--;
+            }
+        }
+
+        // Tahmin yap
+        function makeGuess() {
+            if (!userGuess) return;
+            
+            clearInterval(timerInterval);
+            gameStarted = false;
+            
+            // Mesafeyi hesapla
+            const distance = calculateDistance(
+                userGuess.lat, userGuess.lng,
+                currentLocation.lat, currentLocation.lng
+            );
+            
+            // Puan hesapla (maksimum 5000 puan)
+            const score = Math.max(0, Math.round(5000 - (distance * 10)));
+            totalScore += score;
+            
+            // Sonuçları kaydet
+            roundResults.push({
+                location: currentLocation,
+                guess: userGuess,
+                distance: distance,
+                score: score
+            });
+            
+            // Sonuçları göster
+            showResults(distance, score);
+            updateScore();
+            updateStats();
+        }
+
+        // Mesafe hesapla (Haversine formülü)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Dünya yarıçapı km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Sonuçları göster
+        function showResults(distance, score) {
+            let message = '';
+            let color = '#FF3B30';
+            let icon = 'fas fa-bullseye';
+            
+            if (distance < 10) {
+                message = '🎯 MÜKEMMEL! Neredeyse tam isabet!';
+                color = '#34C759';
+                icon = 'fas fa-trophy';
+            } else if (distance < 50) {
+                message = '👍 ÇOK İYİ! Oldukça yakınsınız!';
+                color = '#30D158';
+                icon = 'fas fa-star';
+            } else if (distance < 200) {
+                message = '👌 İYİ! Güzel bir tahmin!';
+                color = '#FF9500';
+                icon = 'fas fa-thumbs-up';
+            } else if (distance < 500) {
+                message = '📏 ORTA! Biraz daha yaklaşabilirdiniz.';
+                color = '#FF9F0A';
+                icon = 'fas fa-map-marker-alt';
+            } else {
+                message = '🌍 UZAK! Daha iyisini yapabilirsiniz.';
+                color = '#FF3B30';
+                icon = 'fas fa-globe-americas';
+            }
+            
+            distanceScoreElement.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: ${color}; color: white; border-radius: 16px; margin-bottom: 15px;">
+                    <i class="${icon}" style="font-size: 2em; margin-bottom: 10px;"></i>
+                    <h3 style="margin-bottom: 15px; font-weight: 700;">${message}</h3>
+                    <div style="font-size: 1.3em; font-weight: 600;">
+                        <div><i class="fas fa-ruler"></i> Mesafe: ${distance.toFixed(1)} km</div>
+                        <div><i class="fas fa-bolt"></i> Puan: ${score} puan</div>
+                    </div>
+                </div>
+            `;
+            
+            // Gerçek lokasyonu haritada göster
+            L.marker([currentLocation.lat, currentLocation.lng])
+                .addTo(map)
+                .bindPopup(`<strong>${currentLocation.city}</strong><br>${currentLocation.country}`)
+                .openPopup();
+            
+            // Çizgi çiz
+            L.polyline([userGuess, [currentLocation.lat, currentLocation.lng]], {
+                color: color,
+                weight: 4,
+                opacity: 0.8,
+                dashArray: '5, 10'
+            }).addTo(map);
+            
+            resultsContainer.style.display = 'block';
+            
+            if (currentRound < totalRounds) {
+                nextRoundBtn.style.display = 'block';
+                nextRoundBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Sonraki Raunt';
+            } else {
+                nextRoundBtn.innerHTML = '<i class="fas fa-flag-checkered"></i> OYUNU TAMAMLA';
+                nextRoundBtn.style.display = 'block';
+            }
+        }
+
+        // Lokasyonu geç
+        function skipLocation() {
+            clearInterval(timerInterval);
+            gameStarted = false;
+            
+            roundResults.push({
+                location: currentLocation,
+                guess: null,
+                distance: null,
+                score: 0
+            });
+            
+            distanceScoreElement.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: #8E8E93; color: white; border-radius: 16px; margin-bottom: 15px;">
+                    <i class="fas fa-forward" style="font-size: 2em; margin-bottom: 10px;"></i>
+                    <h3 style="margin-bottom: 15px; font-weight: 700;">⏭️ LOKASYON GEÇİLDİ</h3>
+                    <div style="font-size: 1.3em; font-weight: 600;">
+                        <i class="fas fa-bolt"></i> Puan: 0 puan
+                    </div>
+                </div>
+            `;
+            
+            resultsContainer.style.display = 'block';
+            updateStats();
+            
+            if (currentRound < totalRounds) {
+                nextRoundBtn.style.display = 'block';
+                nextRoundBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Sonraki Raunt';
+            } else {
+                nextRoundBtn.innerHTML = '<i class="fas fa-flag-checkered"></i> OYUNU TAMAMLA';
+                nextRoundBtn.style.display = 'block';
+            }
+        }
+
+        // Sonraki raunt
+        function nextRound() {
+            currentRound++;
+            
+            if (currentRound <= totalRounds) {
+                startRound();
+            } else {
+                endGame();
+            }
+        }
+
+        // Skoru güncelle
+        function updateScore() {
+            totalScoreElement.textContent = totalScore;
+        }
+
+        // İstatistikleri güncelle
+        function updateStats() {
+            const validResults = roundResults.filter(r => r.guess !== null);
+            const foundCount = validResults.length;
+            const accuracy = roundResults.length > 0 ? Math.round((foundCount / roundResults.length) * 100) : 0;
+            
+            let totalDistance = 0;
+            validResults.forEach(r => {
+                totalDistance += r.distance;
+            });
+            const avgDistance = foundCount > 0 ? (totalDistance / foundCount) : 0;
+            
+            accuracyElement.textContent = `${accuracy}%`;
+            avgDistanceElement.textContent = avgDistance > 0 ? `${avgDistance.toFixed(1)} km` : '- km';
+            foundCountElement.textContent = foundCount;
+        }
+
+        // Oyunu bitir
+        function endGame() {
+            gameStarted = false;
+            clearInterval(timerInterval);
+            
+            const finalMessage = totalScore >= 20000 ? '🏆 MÜTHİŞ! Coğrafya dehasısınız!' :
+                              totalScore >= 15000 ? '🎯 HARİKA! Çok iyi bildiniz!' :
+                              totalScore >= 10000 ? '👍 GÜZEL! İyi bir skor!' :
+                              totalScore >= 5000 ? '👌 FENA DEĞİL! Daha iyi olabilir.' :
+                              '🌍 DAHA ÇOK ÇALIŞMAK LAZIM!';
+            
+            // Daha modern bir alert kutusu
+            const alertBox = document.createElement('div');
+            alertBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                padding: 40px;
+                border-radius: 24px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                z-index: 1000;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                max-width: 400px;
+                width: 90%;
+            `;
+            
+            alertBox.innerHTML = `
+                <h2 style="margin-bottom: 20px; color: #1d1d1f;">🎮 OYUN BİTTİ!</h2>
+                <div style="font-size: 1.3em; margin-bottom: 25px; color: #007AFF; font-weight: 600;">${finalMessage}</div>
+                <div style="font-size: 1.1em; margin-bottom: 30px; color: #1d1d1f;">
+                    <strong>Toplam Puan:</strong> ${totalScore}
+                </div>
+                <button onclick="this.parentElement.remove(); location.reload();" 
+                        style="background: linear-gradient(135deg, #007AFF, #5856D6); color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 1.1em; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-redo"></i> Tekrar Oyna
+                </button>
+            `;
+            
+            document.body.appendChild(alertBox);
+        }
+    </script>
+</body>
+</html>
